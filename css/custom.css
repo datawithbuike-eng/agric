@@ -1,0 +1,146 @@
+/*
+	1) Logo
+	2) Header Menu
+	3) Homepage Slider
+	4) Hero Image
+	5) Colored background in the right column of left-aligned stripe
+	6) "Custom Background Image" Stripe Section
+*/
+
+
+/*-----------------------------------------------------------------------------------*/
+/*	1. Logo
+/*-----------------------------------------------------------------------------------*/
+
+#logo > a {
+	/* Set the width of your logo (240px - the width of theme's default logo image) */
+	width: 240px;
+}
+
+
+/*-----------------------------------------------------------------------------------*/
+/*	2. Header Menu
+/*-----------------------------------------------------------------------------------*/
+
+#navigation {
+	/* If your logo is too high, increase this value (40px - default value) */
+	margin-top: 40px;
+}
+#header.extended #navigation {
+	/* If your logo is too high, increase this value (10px - default value) */
+	margin-top: 10px;
+}
+
+
+/*-----------------------------------------------------------------------------------*/
+/*	3. Homepage Slider
+/*-----------------------------------------------------------------------------------*/
+
+/* Here your should set your images for the homepage slider */
+
+/* image width 1920px */
+#home-slider .slide1 { background-image: url(../images/banners/slide1-1920x960.jpg); }
+#home-slider .slide2 { background-image: url(../images/banners/slide2-1920x960.jpg); }
+#home-slider .slide3 { background-image: url(../images/banners/slide3-1920x960.jpg); }
+#home-slider .slide4 { background-image: url(../images/banners/slide4-1920x960.jpg); }
+#home-slider .slide5 { background-image: url(../images/banners/slide5-1920x960.jpg); }
+
+
+/*-----------------------------------------------------------------------------------*/
+/*	4. Hero Image
+/*-----------------------------------------------------------------------------------*/
+
+/* Here your should set your images for the page title background */
+
+/* image width 1920px */
+#hero-image.image-bg .banner-about-us {
+	background-image: url(../images/banners/banner-about-us-1920x768.jpg);
+}
+#hero-image.image-bg .banner-our-difference {
+	background-image: url(../images/banners/banner-our-difference-1920x768.jpg);
+}
+#hero-image.image-bg .banner-team {
+	background-image: url(../images/banners/banner-team-1920x768.jpg);
+}
+#hero-image.image-bg .banner-our-heritage {
+	background-image: url(../images/banners/banner-our-heritage-1920x768.jpg);
+}
+#hero-image.image-bg .banner-how-we-can-help {
+	background-image: url(../images/banners/banner-how-we-can-help-1920x768.jpg);
+}
+#hero-image.image-bg .banner-services {
+	background-image: url(../images/banners/banner-services-1920x768.jpg);
+}
+#hero-image.image-bg .banner-how-we-work {
+	background-image: url(../images/banners/banner-how-we-work-1920x768.jpg);
+}
+#hero-image.image-bg .banner-investment-approach {
+	background-image: url(../images/banners/banner-investment-approach-1920x768.jpg);
+}
+#hero-image.image-bg .banner-fees {
+	background-image: url(../images/banners/banner-fees-1920x768.jpg);
+}
+#hero-image.image-bg .banner-who-we-help {
+	background-image: url(../images/banners/banner-who-we-help-1920x768.jpg);
+}
+#hero-image.image-bg .banner-get-started {
+	background-image: url(../images/banners/banner-get-started-1920x768.jpg);
+}
+#hero-image.image-bg .banner-client-stories {
+	background-image: url(../images/banners/banner-client-stories-1920x768.jpg);
+}
+#hero-image.image-bg .banner-faq {
+	background-image: url(../images/banners/banner-faq-1920x768.jpg);
+}
+#hero-image.image-bg .banner-case-study-v1,
+#hero-image.image-bg .banner-single-service-v1 {
+	background-image: url(../images/banners/banner-service-1-1920x768.jpg);
+}
+#hero-image.image-bg .banner-case-study-v2,
+#hero-image.image-bg .banner-single-service-v2 {
+	background-image: url(../images/banners/banner-service-2-1920x768.jpg);
+}
+#hero-image.image-bg .banner-case-study-v3,
+#hero-image.image-bg .banner-single-service-v3 {
+	background-image: url(../images/banners/banner-service-3-1920x768.jpg);
+}
+#hero-image.image-bg .banner-blog {
+	background-image: url(../images/banners/banner-blog-1920x768.jpg);
+}
+#hero-image.image-bg .banner-single-post {
+	background-image: url(../images/banners/banner-single-post-1920x768.jpg);
+}
+#hero-image.image-bg .banner-contact {
+	background-image: url(../images/banners/banner-contact-1920x768.jpg);
+}
+
+
+/*-----------------------------------------------------------------------------------*/
+/*	5. Colored background in the right column of left-aligned stripe
+/*-----------------------------------------------------------------------------------*/
+
+.stripe-left.stripe-right-col-colored.stripe-right-col-yellow > .container > .row > .columns:last-child::before {
+	background-color: #fff2b2; /* yellow: rgb(255, 242, 178), hsb(50, 30, 100) */
+}
+.stripe-left.stripe-right-col-colored.stripe-right-col-yellow-orange > .container > .row > .columns:last-child::before {
+	background-color: #ffe9c4; /* yellow-orange: rgb(255, 233, 196), hsb(38, 23, 100) */
+}
+.stripe-left.stripe-right-col-colored.stripe-right-col-orange > .container > .row > .columns:last-child::before {
+	background-color: #ffe4d1; /* orange: rgb(255, 228, 209), hsb(25, 18, 100) */
+}
+.stripe-left.stripe-right-col-colored.stripe-right-col-blue > .container > .row > .columns:last-child::before {
+	background-color: #e1e9f2; /* blue: rgb(225, 233, 242), hsb(213, 7, 95) */
+}
+
+/*-----------------------------------------------------------------------------------*/
+/*	6. "Custom Background Image" Stripe Section
+/*-----------------------------------------------------------------------------------*/
+
+/* Here your should set your images for the "Custom Background Image" stripe section */
+
+.stripe-custom-bg-image1 > .stripe-upper-bg {
+	background-image: url(../images/custom-bg-image-1.jpg);
+}
+.stripe-custom-bg-image2 > .stripe-upper-bg {
+	background-image: url(../images/banners/banner-get-started-1920x768.jpg);
+}

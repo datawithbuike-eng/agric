@@ -1,0 +1,52 @@
+/*	Theme's extra color: RED
+
+red - #ed5f4a / rgb(237, 95, 74)
+*/
+
+
+/* Feature List */
+.feature-list.numeric-list .box-icon.extra-color-bg {
+	background-color: rgba(237, 95, 74, 0.8); /* #ed5f4a */
+}
+.feature-list.arrow-list .box-icon i,
+.feature-list.arrow-list .box-icon.extra-color i {
+	color: #ed5f4a;
+}
+
+/* Diagrams */
+.venn-diagram .circle {
+	background-color: rgba(237, 95, 74, 0.85); /* #ed5f4a */
+	border-color: #ed5f4a;
+}
+
+/* Single Post */
+.fa-icon-list.social-share li a:hover {
+	border-color: rgba(237, 95, 74, 0.7); /* #ed5f4a */
+}
+.fa-icon-list.social-share li .fa {
+	color: #ed5f4a;
+}
+
+/* Standard Table */
+table.standard-table td .fa { /* .fa-check */
+	color: #ed5f4a;
+}
+
+/* Pricing Table */
+.pricing-table .features li .fa { /* .fa-check */
+	color: #ed5f4a;
+}
+
+/* Typography */
+.check-list li::before {
+	color: #ed5f4a;
+}
+.check-small-list li::before {
+	color: #ed5f4a;
+}
+.arrow-list li::before {
+	color: #ed5f4a;
+}
+.dot-list li::before {
+	color: #ed5f4a;
+}
