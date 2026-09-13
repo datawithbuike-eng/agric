@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% import "_flash.html" as f %}
+{% block title %}{{ 'Log In' if default_panel == 'login' else 'Create Account' }} &#8211; AquaVest Capital{% endblock %}
+{% block head %}
+<style>
+  .auth-shell{min-height:calc(100vh - 68px);display:flex;align-items:center;justify-content:center;padding:50px 20px;}
+  .auth-book-wrap{perspective:2200px;width:100%;max-width:420px;}
+  .auth-book{position:relative;min-height:560px;}
+  .auth-page{
+    position:absolute;inset:0;background:#fff;border-radius:14px;padding:40px 36px;
+    box-shadow:0 30px 60px rgba(0,0,0,0.35);display:flex;flex-direction:column;
+  }
+  .auth-page-signup{
+    transform-origin:left center;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    transition:transform 0.9s cubic-bezier(.55,.06,.2,1), box-shadow 0.9s;
+    z-index:2;
+  }
+  .auth-page-login{
+    z-index:1;
+  }
+  .auth-book.show-login .auth-page-signup{
+    transform:rotateY(-172deg);
+    box-shadow:0 10px 30px rgba(0,0,0,0.15);
+    pointer-events:none;
+  }
+  .auth-spine{
+    position:absolute;left:-2px;top:6%;bottom:6%;width:6px;border-radius:3px;
+    background:linear-gradient(180deg,#d7e0e5,#aebbc3,#d7e0e5);z-index:3;
+  }
+  .auth-h1{font-family:'Oswald','Roboto Slab',sans-serif;font-size:26px;margin:0 0 6px;color:#0b1c2c;}
+  .auth-sub{margin:0 0 26px;color:#6a7a86;font-size:14px;}
+  .auth-toggle-note{margin-top:auto;padding-top:22px;text-align:center;font-size:14px;color:#6a7a86;}
+  .auth-toggle-note button{
+    background:none;border:none;color:#2ba9c9;font-weight:700;font-size:14px;cursor:pointer;
+    font-family:inherit;padding:0;text-decoration:underline;
+  }
+  .auth-demo-hint{margin-top:18px;font-size:12px;color:#7c8790;background:#f3f8fa;border:1px dashed #cfe0e6;border-radius:8px;padding:10px 12px;}
+  @media (max-width:480px){.auth-page{padding:30px 24px;}.auth-book{min-height:600px;}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="auth-book-wrap">
+    <div class="auth-book" id="authBook">
+      <div class="auth-spine"></div>
+
+      <div class="auth-page auth-page-signup">
+        <h1 class="auth-h1">Create your investor account</h1>
+        <p class="auth-sub">Open an account to deposit funds and start investing in AquaVest's aquaculture funds.</p>
+
+        {{ f.flash_for('signup_error') }}
+
+        <form method="post" action="{{ url_for('signup') }}">
+          <div class="av-field">
+            <label for="su_name">Full name</label>
+            <input type="text" id="su_name" name="name" autocomplete="name" required />
+          </div>
+          <div class="av-field">
+            <label for="su_email">Email address</label>
+            <input type="email" id="su_email" name="email" autocomplete="email" required />
+          </div>
+          <div class="av-field">
+            <label for="su_password">Password</label>
+            <input type="password" id="su_password" name="password" autocomplete="new-password" minlength="8" required />
+          </div>
+          <button type="submit" class="av-btn av-btn-primary av-btn-block">Create Account</button>
+        </form>
+
+        <div class="auth-toggle-note">
+          Already a member? <button type="button" id="toShowLogin">Sign In</button>
+        </div>
+
+        <div class="auth-demo-hint">
+          Passwords are stored as server-side hashes (Werkzeug/PBKDF2) &mdash; not a full production security review.
+        </div>
+      </div>
+
+      <div class="auth-page auth-page-login">
+        <h1 class="auth-h1">Log in to your dashboard</h1>
+        <p class="auth-sub">Track your holdings, returns, and transaction history.</p>
+
+        {{ f.flash_for('login_error') }}
+
+        <form method="post" action="{{ url_for('login') }}">
+          <div class="av-field">
+            <label for="li_email">Email address</label>
+            <input type="email" id="li_email" name="email" autocomplete="email" required />
+          </div>
+          <div class="av-field">
+            <label for="li_password">Password</label>
+            <input type="password" id="li_password" name="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="av-btn av-btn-primary av-btn-block">Log In</button>
+        </form>
+
+        <div class="auth-toggle-note">
+          New here? <button type="button" id="toShowSignup">Create an Account</button>
+        </div>
+
+        <div class="auth-demo-hint">
+          Demo investor: <strong>demo@aquavest.com</strong> / <strong>demo1234</strong><br />
+          Demo admin: <strong>admin@aquavest.com</strong> / <strong>admin1234</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var book = document.getElementById('authBook');
+  var startOnLogin = {{ 'true' if default_panel == 'login' else 'false' }};
+  var hasSignupError = {{ 'true' if get_flashed_messages(category_filter=['signup_error']) else 'false' }};
+  var hasLoginError = {{ 'true' if get_flashed_messages(category_filter=['login_error']) else 'false' }};
+
+  // Land on whichever panel is relevant: an error keeps you on the panel
+  // that produced it; otherwise use the route that was requested
+  // (/login vs /signup) — no animation on first load, just the right state.
+  if ((startOnLogin && !hasSignupError) || hasLoginError) {
+    book.classList.add('show-login');
+  }
+
+  document.getElementById('toShowLogin').addEventListener('click', function () {
+    book.classList.add('show-login');
+  });
+  document.getElementById('toShowSignup').addEventListener('click', function () {
+    book.classList.remove('show-login');
+  });
+</script>
+{% endblock %}

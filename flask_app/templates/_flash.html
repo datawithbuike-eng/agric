@@ -1,0 +1,7 @@
+{% macro flash_for(category, success=False) %}
+  {% with messages = get_flashed_messages(category_filter=[category]) %}
+    {% if messages %}
+      <div class="av-error show" {% if success %}style="background:#eafaf1;color:#1e7a4c;border-color:#bfe9d0;"{% endif %}>{{ messages[0] }}</div>
+    {% endif %}
+  {% endwith %}
+{% endmacro %}

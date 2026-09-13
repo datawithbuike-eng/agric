@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{% block title %}AquaVest Capital{% endblock %}</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700%7CRoboto+Slab:700%7CKarla:400,700%7COswald:500,600,700&display=swap">
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
+{% block head %}{% endblock %}
+</head>
+<body class="av-body">
+
+<div class="av-prototype-banner">
+  Flask backend build &mdash; real sessions and a real database, but there's still no real email delivery or payment verification. See <code>mail.py</code> and <code>models.py</code> for what to wire up next.
+</div>
+
+<div class="av-topbar">
+  <a class="av-logo" href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='logo.png') }}" alt="" /> AquaVest {{ 'Admin' if current_user.is_authenticated and current_user.is_admin() else 'Capital' }}</a>
+  <div class="av-topbar-actions">
+    {% if current_user.is_authenticated %}
+      {% if not current_user.is_admin() %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('profile') }}">My Profile</a>
+      {% endif %}
+      <a href="{{ url_for('logout') }}">Log Out</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Log In</a>
+      <a href="{{ url_for('signup') }}">Create Account</a>
+    {% endif %}
+  </div>
+</div>
+
+{% block content %}{% endblock %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

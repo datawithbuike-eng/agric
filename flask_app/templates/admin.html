@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% import "_flash.html" as f %}
+{% block title %}Admin Portal &#8211; AquaVest Capital{% endblock %}
+{% block content %}
+<div class="av-shell">
+
+  <div class="av-greeting">
+    <div>
+      <h1>Admin Portal</h1>
+      <p>Approve deposits and withdrawals, review investment requests, and manage investor accounts.</p>
+    </div>
+  </div>
+
+  {{ f.flash_for('error') }}
+  {{ f.flash_for('success', success=True) }}
+
+  <div class="av-summary-grid">
+    <div class="av-stat-card">
+      <div class="av-stat-label">Pending Approvals</div>
+      <div class="av-stat-value">{{ stat_pending }}</div>
+      <div class="av-stat-sub">Awaiting your decision</div>
+    </div>
+    <div class="av-stat-card">
+      <div class="av-stat-label">Total Investors</div>
+      <div class="av-stat-value">{{ stat_users }}</div>
+      <div class="av-stat-sub">Registered accounts</div>
+    </div>
+    <div class="av-stat-card">
+      <div class="av-stat-label">Total Cash Held</div>
+      <div class="av-stat-value">${{ stat_cash | money }}</div>
+      <div class="av-stat-sub">Across all investor accounts</div>
+    </div>
+    <div class="av-stat-card">
+      <div class="av-stat-label">Total Invested (active)</div>
+      <div class="av-stat-value">${{ stat_invested | money }}</div>
+      <div class="av-stat-sub">Across all approved investments</div>
+    </div>
+  </div>
+
+  <div class="av-tab-bar">
+    <button class="av-tab-btn active" type="button" data-tab="pending">Pending Approvals</button>
+    <button class="av-tab-btn" type="button" data-tab="users">Investor Accounts</button>
+    <button class="av-tab-btn" type="button" data-tab="history">All Transactions</button>
+  </div>
+
+  <div class="av-tab-panel active" id="tab-pending">
+    <div class="av-panel">
+      <h2>Awaiting Approval</h2>
+      {% if pending %}
+        <table class="av-table">
+          <thead><tr><th>Date</th><th>Investor</th><th>Type</th><th>Method</th><th>Fund</th><th>Amount</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for t in pending %}
+              <tr>
+                <td>{{ t.date.strftime('%b %d') }}</td>
+                <td>{{ t.user.name }}<br><span style="color:#8ea0ab;font-size:12px;">{{ t.user.email }}</span></td>
+                <td><span class="av-pill av-pill-{{ t.type }}">{{ {'deposit': 'Deposit', 'withdrawal': 'Withdrawal', 'investment_start': 'Investment'}[t.type] }}</span></td>
+                <td>{% if t.type == 'deposit' %}{% if t.method == 'crypto' %}{{ crypto_wallets[t.crypto].label }} (crypto){% else %}Bank transfer{% endif %}{% else %}&mdash;{% endif %}</td>
+                <td>{{ funds[t.fund].label if t.fund else '—' }}</td>
+                <td>${{ t.amount | money }}</td>
+                <td>
+                  <form method="post" action="{{ url_for('admin_approve', txn_id=t.id) }}" style="display:inline;">
+                    <button class="av-btn av-btn-primary av-btn-sm" type="submit">Approve</button>
+                  </form>
+                  <button class="av-btn av-btn-danger av-btn-sm" type="button" onclick="openRejectModal({{ t.id }})">Reject</button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="av-empty">Nothing waiting for review.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="av-tab-panel" id="tab-users">
+    <div class="av-panel">
+      <h2>Investor Accounts</h2>
+      {% if users %}
+        <table class="av-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Cash Balance</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for u in users %}
+              <tr>
+                <td>{{ u.name }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.phone or '—' }}</td>
+                <td>${{ u.cash_balance | money }}</td>
+                <td><span class="av-pill av-pill-{{ u.status }}">{{ u.status }}</span></td>
+                <td><button class="av-btn av-btn-secondary av-btn-sm js-edit-user" type="button"
+                      data-id="{{ u.id }}" data-name="{{ u.name }}" data-email="{{ u.email }}"
+                      data-phone="{{ u.phone or '' }}" data-balance="{{ u.cash_balance }}" data-status="{{ u.status }}">Edit</button></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="av-empty">No investor accounts yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="av-tab-panel" id="tab-history">
+    <div class="av-panel">
+      <h2>All Transactions</h2>
+      {% if all_txns %}
+        <table class="av-table">
+          <thead><tr><th>Date</th><th>Investor</th><th>Type</th><th>Method</th><th>Fund</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for t in all_txns %}
+              <tr>
+                <td>{{ t.date.strftime('%b %d') }}</td>
+                <td>{{ t.user.name }}</td>
+                <td><span class="av-pill av-pill-{{ t.type }}">{{ {'deposit': 'Deposit', 'withdrawal': 'Withdrawal', 'investment_start': 'Investment'}[t.type] }}</span></td>
+                <td>{% if t.type == 'deposit' %}{% if t.method == 'crypto' %}{{ crypto_wallets[t.crypto].label }} (crypto){% else %}Bank transfer{% endif %}{% else %}&mdash;{% endif %}</td>
+                <td>{{ funds[t.fund].label if t.fund else '—' }}</td>
+                <td>${{ t.amount | money }}</td>
+                <td><span class="av-pill av-pill-{{ t.status }}">{{ t.status.replace('_', ' ') }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="av-empty">No transactions yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Reject reason modal -->
+<div class="av-modal-backdrop" id="rejectModal">
+  <div class="av-modal">
+    <h3>Reject this request?</h3>
+    <form method="post" id="rejectForm">
+      <div class="av-field">
+        <label for="rejectReason">Reason (optional, included in the investor's email)</label>
+        <input type="text" id="rejectReason" name="reason" placeholder="e.g. Documentation incomplete" />
+      </div>
+      <div class="av-modal-actions">
+        <button type="button" class="av-btn av-btn-secondary" onclick="closeModal('rejectModal')">Cancel</button>
+        <button type="submit" class="av-btn av-btn-danger">Reject</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit user modal -->
+<div class="av-modal-backdrop" id="editUserModal">
+  <div class="av-modal">
+    <h3>Edit Investor Account</h3>
+    <form method="post" id="editUserForm">
+      <div class="av-field">
+        <label for="editUserName">Name</label>
+        <input type="text" id="editUserName" name="name" required />
+      </div>
+      <div class="av-field">
+        <label for="editUserEmail">Email</label>
+        <input type="email" id="editUserEmail" name="email" required />
+      </div>
+      <div class="av-field">
+        <label for="editUserPhone">Phone</label>
+        <input type="text" id="editUserPhone" name="phone" />
+      </div>
+      <div class="av-field">
+        <label for="editUserBalance">Cash Balance (USD)</label>
+        <input type="number" step="0.01" id="editUserBalance" name="cash_balance" required />
+      </div>
+      <div class="av-field">
+        <label for="editUserStatus">Account Status</label>
+        <select id="editUserStatus" name="status">
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+        </select>
+      </div>
+      <div class="av-modal-actions">
+        <button type="button" class="av-btn av-btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
+        <button type="submit" class="av-btn av-btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.av-tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.av-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.av-tab-panel').forEach(function (p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.getAttribute('data-tab')).classList.add('active');
+    });
+  });
+
+  function openModal(id) { document.getElementById(id).classList.add('show'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+  document.querySelectorAll('.av-modal-backdrop').forEach(function (backdrop) {
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeModal(backdrop.id); });
+  });
+
+  function openRejectModal(txnId) {
+    document.getElementById('rejectForm').action = '/admin/reject/' + txnId;
+    document.getElementById('rejectReason').value = '';
+    openModal('rejectModal');
+  }
+
+  document.querySelectorAll('.js-edit-user').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.getElementById('editUserForm').action = '/admin/user/' + btn.getAttribute('data-id');
+      document.getElementById('editUserName').value = btn.getAttribute('data-name');
+      document.getElementById('editUserEmail').value = btn.getAttribute('data-email');
+      document.getElementById('editUserPhone').value = btn.getAttribute('data-phone');
+      document.getElementById('editUserBalance').value = btn.getAttribute('data-balance');
+      document.getElementById('editUserStatus').value = btn.getAttribute('data-status');
+      openModal('editUserModal');
+    });
+  });
+</script>
+{% endblock %}

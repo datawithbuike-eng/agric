@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% import "_flash.html" as f %}
+{% block title %}Investor Dashboard &#8211; AquaVest Capital{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="av-shell">
+
+  <div class="av-greeting">
+    <div>
+      <h1>Welcome back, {{ current_user.name.split(' ')[0] }}</h1>
+      <p>Here's how your aquaculture portfolio is performing.</p>
+    </div>
+  </div>
+
+  <div class="av-summary-grid">
+    <div class="av-stat-card">
+      <div class="av-stat-label">Available Cash</div>
+      <div class="av-stat-value">${{ portfolio.cash_balance | money }}</div>
+      <div class="av-stat-sub">Ready to invest or withdraw</div>
+    </div>
+    <div class="av-stat-card">
+      <div class="av-stat-label">Total Invested</div>
+      <div class="av-stat-value">${{ portfolio.total_invested | money }}</div>
+      <div class="av-stat-sub">Across all active funds</div>
+    </div>
+    <div class="av-stat-card">
+      <div class="av-stat-label">Current Portfolio Value</div>
+      <div class="av-stat-value">${{ portfolio.total_current_value | money }}</div>
+      <div class="av-stat-sub">Simulated, updated live</div>
+    </div>
+    <div class="av-stat-card">
+      <div class="av-stat-label">Total Return</div>
+      <div class="av-stat-value {{ 'av-stat-positive' if portfolio.total_return >= 0 else 'av-stat-negative' }}">
+        {{ '+' if portfolio.total_return >= 0 else '-' }}${{ (portfolio.total_return | abs) | money }}
+      </div>
+      <div class="av-stat-sub">{{ '+' if portfolio.total_return_pct >= 0 else '' }}{{ '%.2f' | format(portfolio.total_return_pct) }}% since inception</div>
+    </div>
+  </div>
+
+  <div class="av-panel">
+    <h2>Quick Actions</h2>
+    <div class="av-action-grid">
+      <button class="av-btn av-btn-primary" type="button" onclick="openModal('depositModal')">Deposit Funds</button>
+      <button class="av-btn av-btn-secondary" type="button" onclick="openModal('withdrawModal')">Withdraw Funds</button>
+      <button class="av-btn av-btn-secondary" type="button" onclick="openModal('investModal')">Start New Investment</button>
+    </div>
+  </div>
+
+  <div class="av-two-col">
+    <div class="av-panel">
+      <h2>Portfolio Growth</h2>
+      <canvas id="growthChart" height="220"></canvas>
+    </div>
+    <div class="av-panel">
+      <h2>Your Holdings</h2>
+      {% if portfolio.holdings %}
+        <div class="av-holdings-list">
+          {% for h in portfolio.holdings %}
+            {% set pct = ((h.current_value - h.invested) / h.invested * 100) if h.invested > 0 else 0 %}
+            <div class="av-holding-row">
+              <div>
+                <div class="av-holding-name">{{ h.label }}</div>
+                <div class="av-holding-meta">Invested ${{ h.invested | money }}</div>
+              </div>
+              <div>
+                <div class="av-holding-value">${{ h.current_value | money }}</div>
+                <div class="av-holding-meta {{ 'av-stat-positive' if pct >= 0 else 'av-stat-negative' }}">{{ '+' if pct >= 0 else '' }}{{ '%.2f' | format(pct) }}%</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="av-empty">No active investments yet. Deposit funds, then start an investment.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if portfolio.pending %}
+  <div class="av-panel">
+    <h2>Pending Activity</h2>
+    <p style="color:#8ea0ab;font-size:13px;margin-top:-10px;">Awaiting admin review &mdash; deposits aren't credited, and withdrawal/investment amounts shown here are already reserved out of your available cash, until approved.</p>
+    <div class="av-holdings-list">
+      {% for t in portfolio.pending %}
+        <div class="av-holding-row">
+          <div>
+            <div class="av-holding-name">
+              {{ {'deposit': 'Deposit', 'withdrawal': 'Withdrawal', 'investment_start': 'Investment'}[t.type] }}
+              {% if t.fund %} &mdash; {{ funds[t.fund].label }}{% endif %}
+            </div>
+            <div class="av-holding-meta">
+              {{ t.date.strftime('%b %d, %Y') }}
+              {% if t.method == 'crypto' %} via {{ crypto_wallets[t.crypto].label }}{% elif t.method == 'bank' %} via bank transfer{% endif %}
+            </div>
+          </div>
+          <div><span class="av-pill av-pill-pending_approval">Pending</span> &nbsp;${{ t.amount | money }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="av-panel">
+    <h2>Transaction History</h2>
+    {% if transactions %}
+      <table class="av-table">
+        <thead><tr><th>Date</th><th>Type</th><th>Method</th><th>Fund</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for t in transactions %}
+            <tr>
+              <td>{{ t.date.strftime('%b %d, %Y') }}</td>
+              <td><span class="av-pill av-pill-{{ t.type }}">{{ {'deposit': 'Deposit', 'withdrawal': 'Withdrawal', 'investment_start': 'Investment'}[t.type] }}</span></td>
+              <td>{% if t.type == 'deposit' %}{% if t.method == 'crypto' %}{{ crypto_wallets[t.crypto].label }}{% else %}Bank transfer{% endif %}{% else %}&mdash;{% endif %}</td>
+              <td>{{ funds[t.fund].label if t.fund else '—' }}</td>
+              <td>${{ t.amount | money }}</td>
+              <td><span class="av-pill av-pill-{{ t.status }}">{{ t.status.replace('_', ' ') }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="av-empty">No transactions yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="av-panel">
+    <h2>Notifications sent (testing)</h2>
+    <p style="color:#8ea0ab;font-size:13px;margin-top:-10px;">Every account and transaction email the app would send &mdash; shown here since real SMTP isn't wired up yet (see <code>mail.py</code>).</p>
+    {% if notifications %}
+      <div class="av-notif-log">
+        {% for m in notifications %}
+          <div class="av-notif-item">
+            <div class="av-notif-meta">{{ m.sent_at.strftime('%b %d, %Y %I:%M %p') }} &middot; to {{ m.to }}</div>
+            <strong>{{ m.subject }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="av-empty">No notifications sent yet.</div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Deposit modal -->
+<div class="av-modal-backdrop" id="depositModal">
+  <div class="av-modal">
+    <h3>Deposit Funds</h3>
+    {{ f.flash_for('deposit_error') }}
+    <form method="post" action="{{ url_for('request_deposit') }}" id="depositForm">
+      <div class="av-field">
+        <label for="depositAmount">Amount (USD)</label>
+        <input type="number" name="amount" id="depositAmount" min="1" step="0.01" required />
+      </div>
+      <div class="av-field">
+        <label>Payment method</label>
+        <div class="av-method-grid">
+          <button type="button" class="av-method-card selected" data-method="bank">Bank Transfer</button>
+          <button type="button" class="av-method-card" data-method="crypto">Cryptocurrency</button>
+        </div>
+      </div>
+      <input type="hidden" name="method" id="depositMethod" value="bank" />
+
+      <div id="cryptoPicker" style="display:none;">
+        <label style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#33424c;">Choose a cryptocurrency</label>
+        <div class="av-crypto-grid" id="cryptoGrid">
+          {% for code, wallet in crypto_wallets.items() %}
+          <button type="button" class="av-crypto-card" data-code="{{ code }}" data-address="{{ wallet.address }}" data-network="{{ wallet.network }}" data-label="{{ wallet.label }}">
+            <div class="av-crypto-symbol">{{ code }}</div>
+            <div class="av-crypto-name">{{ wallet.label }}</div>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="av-modal-actions" id="bankActions">
+        <button type="button" class="av-btn av-btn-secondary" onclick="closeModal('depositModal')">Cancel</button>
+        <button type="submit" class="av-btn av-btn-primary">Deposit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Crypto wallet popup -->
+<div class="av-modal-backdrop av-wallet-modal" id="walletModal">
+  <div class="av-modal">
+    <div class="av-wallet-warning">⚠ DEMO ADDRESS &mdash; for prototype testing only. Do not send real cryptocurrency.</div>
+    <h3 id="walletTitle">Send</h3>
+    <p class="av-wallet-meta">Send exactly <strong id="walletAmount"></strong> worth of <span id="walletNetwork"></span> to the address below.</p>
+    <div class="av-wallet-qr"><div id="walletQr"></div></div>
+    <div class="av-wallet-address-row">
+      <span id="walletAddress"></span>
+      <button type="button" class="av-btn av-btn-secondary av-btn-sm" id="copyAddressBtn">Copy</button>
+    </div>
+    <div class="av-wallet-timer" id="walletTimer"></div>
+    <div class="av-modal-actions">
+      <button type="button" class="av-btn av-btn-secondary" onclick="closeModal('walletModal')">Cancel</button>
+      <button type="button" class="av-btn av-btn-primary" id="confirmSentBtn">I've Sent It</button>
+    </div>
+    <div class="av-security-note">
+      For your protection: this address is generated fresh for this deposit and expires when the timer above runs out. Always copy the address rather than retyping it, and only ever use the address shown here in your logged-in AquaVest dashboard &mdash; we will never message you a different one. This app still cannot verify on-chain receipt, which is why every crypto deposit still requires manual admin approval.
+    </div>
+    <form method="post" action="{{ url_for('request_deposit') }}" id="cryptoConfirmForm">
+      <input type="hidden" name="method" value="crypto" />
+      <input type="hidden" name="amount" id="cryptoConfirmAmount" />
+      <input type="hidden" name="crypto" id="cryptoConfirmCode" />
+    </form>
+  </div>
+</div>
+
+<!-- Withdraw modal -->
+<div class="av-modal-backdrop" id="withdrawModal">
+  <div class="av-modal">
+    <h3>Withdraw Funds</h3>
+    {{ f.flash_for('withdraw_error') }}
+    <form method="post" action="{{ url_for('request_withdrawal') }}">
+      <div class="av-field">
+        <label for="withdrawAmount">Amount (USD)</label>
+        <input type="number" name="amount" id="withdrawAmount" min="1" step="0.01" required />
+      </div>
+      <div class="av-modal-actions">
+        <button type="button" class="av-btn av-btn-secondary" onclick="closeModal('withdrawModal')">Cancel</button>
+        <button type="submit" class="av-btn av-btn-primary">Withdraw</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Invest modal -->
+<div class="av-modal-backdrop" id="investModal">
+  <div class="av-modal">
+    <h3>Start New Investment</h3>
+    {{ f.flash_for('invest_error') }}
+    <form method="post" action="{{ url_for('request_investment') }}">
+      <div class="av-field">
+        <label for="investFund">Fund</label>
+        <select name="fund" id="investFund" required>
+          {% for key, fund in funds.items() %}
+            <option value="{{ key }}">{{ fund.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="av-field">
+        <label for="investAmount">Amount (USD)</label>
+        <input type="number" name="amount" id="investAmount" min="1" step="0.01" required />
+      </div>
+      <div class="av-modal-actions">
+        <button type="button" class="av-btn av-btn-secondary" onclick="closeModal('investModal')">Cancel</button>
+        <button type="submit" class="av-btn av-btn-primary">Invest</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var chartLabels = {{ chart_labels | tojson }};
+  var chartData = {{ chart_data | tojson }};
+
+  new Chart(document.getElementById('growthChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: chartLabels, datasets: [{ label: 'Portfolio value', data: chartData, borderColor: '#6ac0e9', backgroundColor: 'rgba(106,192,233,0.12)', fill: true, tension: 0.3, pointRadius: 2 }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8ea0ab' }, grid: { color: '#1c2530' } },
+        y: { ticks: { color: '#8ea0ab', callback: function (v) { return '$' + v.toLocaleString(); } }, grid: { color: '#1c2530' } },
+      },
+    },
+  });
+
+  function openModal(id) { document.getElementById(id).classList.add('show'); }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    if (id === 'walletModal' && window.walletTimerInterval) { clearInterval(window.walletTimerInterval); }
+  }
+  document.querySelectorAll('.av-modal-backdrop').forEach(function (backdrop) {
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeModal(backdrop.id); });
+  });
+
+  document.querySelectorAll('.av-method-card').forEach(function (card) {
+    card.addEventListener('click', function () {
+      document.querySelectorAll('.av-method-card').forEach(function (c) { c.classList.remove('selected'); });
+      card.classList.add('selected');
+      var isCrypto = card.getAttribute('data-method') === 'crypto';
+      document.getElementById('depositMethod').value = isCrypto ? 'crypto' : 'bank';
+      document.getElementById('cryptoPicker').style.display = isCrypto ? '' : 'none';
+      document.getElementById('bankActions').style.display = isCrypto ? 'none' : '';
+    });
+  });
+
+  document.querySelectorAll('#cryptoGrid .av-crypto-card').forEach(function (card) {
+    card.addEventListener('click', function () {
+      var amount = document.getElementById('depositAmount').value;
+      if (!(Number(amount) > 0)) {
+        alert('Enter an amount before choosing a cryptocurrency.');
+        return;
+      }
+      openWalletPopup(card.getAttribute('data-code'), card.getAttribute('data-address'), card.getAttribute('data-network'), card.getAttribute('data-label'), Number(amount));
+    });
+  });
+
+  function openWalletPopup(code, address, network, label, amount) {
+    document.getElementById('walletTitle').textContent = 'Send ' + code;
+    document.getElementById('walletAmount').textContent = '$' + amount.toLocaleString(undefined, { minimumFractionDigits: 2 });
+    document.getElementById('walletNetwork').textContent = network;
+    document.getElementById('walletAddress').textContent = address;
+
+    var qrContainer = document.getElementById('walletQr');
+    qrContainer.innerHTML = '';
+    if (window.QRCode) { new QRCode(qrContainer, { text: address, width: 180, height: 180, colorDark: '#0b1c2c', colorLight: '#ffffff' }); }
+
+    document.getElementById('cryptoConfirmAmount').value = amount;
+    document.getElementById('cryptoConfirmCode').value = code;
+
+    closeModal('depositModal');
+    openModal('walletModal');
+    startWalletTimer(15 * 60);
+  }
+
+  function startWalletTimer(seconds) {
+    if (window.walletTimerInterval) clearInterval(window.walletTimerInterval);
+    var remaining = seconds;
+    var expired = false;
+    function tick() {
+      var m = Math.floor(remaining / 60), s = remaining % 60;
+      document.getElementById('walletTimer').textContent = expired
+        ? 'This address has expired. Close and start a new deposit.'
+        : 'This address expires in ' + m + ':' + (s < 10 ? '0' : '') + s;
+      if (remaining <= 0) { clearInterval(window.walletTimerInterval); expired = true; window.walletExpired = true; }
+      remaining--;
+    }
+    window.walletExpired = false;
+    tick();
+    window.walletTimerInterval = setInterval(tick, 1000);
+  }
+
+  document.getElementById('copyAddressBtn').addEventListener('click', function () {
+    var address = document.getElementById('walletAddress').textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(address).then(function () {
+        var btn = document.getElementById('copyAddressBtn');
+        var original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = original; }, 1500);
+      });
+    }
+  });
+
+  document.getElementById('confirmSentBtn').addEventListener('click', function () {
+    if (window.walletExpired) {
+      alert('This address expired. Close this window and start a new deposit.');
+      return;
+    }
+    document.getElementById('cryptoConfirmForm').submit();
+  });
+
+  {% if get_flashed_messages(category_filter=['deposit_error']) %}openModal('depositModal');{% endif %}
+  {% if get_flashed_messages(category_filter=['withdraw_error']) %}openModal('withdrawModal');{% endif %}
+  {% if get_flashed_messages(category_filter=['invest_error']) %}openModal('investModal');{% endif %}
+</script>
+{% endblock %}
